@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/neverendingqs/serverless-stack-policy-bug#readme",
   "devDependencies": {
-    "serverless": "^3.10.0"
+    "serverless": "3.10.0"
   }
 }

@@ -1,72 +1,54 @@
-<!--
-title: 'AWS NodeJS Example'
-description: 'This template demonstrates how to deploy a NodeJS function running on AWS Lambda using the traditional Serverless Framework.'
-layout: Doc
-framework: v3
-platform: AWS
-language: nodeJS
-priority: 1
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
-
-
 # serverless-stack-policy-bug
 
-This template demonstrates how to deploy a NodeJS function running on AWS Lambda using the traditional Serverless Framework. The deployed function does not include any event definitions as well as any kind of persistence (database). For more advanced configurations check out the [examples repo](https://github.com/serverless/examples/) which includes integrations with SQS, DynamoDB or examples of functions that are triggered in `cron`-like manner. For details about configuration of specific `events`, please refer to our [documentation](https://www.serverless.com/framework/docs/providers/aws/events/).
-
-## Usage
-
-### Deployment
-
-In order to deploy the example, you need to run the following command:
+Deploying this from new produces the following error:
 
 ```
-$ serverless deploy
+npm run sls -- deploy --stage mtsetest
+
+> serverless-stack-policy-bug@0.0.1 sls <redacted>\serverless-stack-policy-bug
+> sls "deploy" "--stage" "mtsetest"
+
+
+Deploying some-service to stage mtsetest (us-east-1)
+
+× Stack some-service-mtsetest failed to deploy (67s)
+Environment: win32, node 14.19.0, framework 3.10.0 (local), plugin 6.2.0, SDK 4.3.2
+Credentials: Local, "<redacted" profile
+Docs:        docs.serverless.com
+Support:     forum.serverless.com
+Bugs:        github.com/serverless/serverless/issues
 ```
 
-After running deploy, you should see output similar to:
+If the stack already existed, updates are likely to work as expected.
 
-```bash
-Deploying aws-node-project to stage dev (us-east-1)
+Confirmed the following change fixes things:
 
-✔ Service deployed to stack aws-node-project-dev (112s)
+```diff
+diff --git a/lib/plugins/aws/lib/update-stack.js b/lib/plugins/aws/lib/update-stack.js
+index 0bd107085..9e8385ec9 100644
+--- a/lib/plugins/aws/lib/update-stack.js
++++ b/lib/plugins/aws/lib/update-stack.js
+@@ -91,6 +91,11 @@ module.exports = {
+       return false;
+     }
 
-functions:
-  hello: aws-node-project-dev-hello (1.5 kB)
-```
++    log.info('Executing created change set');
++    await this.provider.request('CloudFormation', 'executeChangeSet', executeChangeSetParams);
++
++    await this.monitorStack('update', changeSetDescription);
++
+     // Policy must have at least one statement, otherwise no updates would be possible at all
+     if (
+       this.serverless.service.provider.stackPolicy &&
+@@ -106,11 +111,6 @@ module.exports = {
+       });
+     }
 
-### Invocation
-
-After successful deployment, you can invoke the deployed function by using the following command:
-
-```bash
-serverless invoke --function hello
-```
-
-Which should result in response similar to the following:
-
-```json
-{
-    "statusCode": 200,
-    "body": "{\n  \"message\": \"Go Serverless v3.0! Your function executed successfully!\",\n  \"input\": {}\n}"
-}
-```
-
-### Local development
-
-You can invoke your function locally by using the following command:
-
-```bash
-serverless invoke local --function hello
-```
-
-Which should result in response similar to the following:
-
-```
-{
-    "statusCode": 200,
-    "body": "{\n  \"message\": \"Go Serverless v3.0! Your function executed successfully!\",\n  \"input\": \"\"\n}"
-}
+-    log.info('Executing created change set');
+-    await this.provider.request('CloudFormation', 'executeChangeSet', executeChangeSetParams);
+-
+-    await this.monitorStack('update', changeSetDescription);
+-
+     return true;
+   },
 ```

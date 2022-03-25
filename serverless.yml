@@ -1,11 +1,33 @@
-service: aws-node-project
+service: some-service
 
 frameworkVersion: '3'
+useDotenv: true
 
 provider:
   name: aws
   runtime: nodejs14.x
+  stackPolicy:
+    - Effect: Allow
+      Principal: '*'
+      Action: 'Update:*'
+      Resource: '*'
+    - Effect: Deny
+      Principal: '*'
+      Action:
+        - Update:Replace
+        - Update:Delete
+      Resource:
+        - LogicalResourceId/SomeBucket
+
+package:
+  patterns:
+    - '!node_modules/**'
 
 functions:
   hello:
     handler: handler.hello
+
+resources:
+  Resources:
+    SomeBucket:
+      Type: AWS::S3::Bucket
