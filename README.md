@@ -1,0 +1,1 @@
+# serverless-stack-policy-bug
